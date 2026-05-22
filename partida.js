@@ -22,6 +22,8 @@ function advanceTurn() {
     return;
   }
 
+  if (checkCreditsBankruptcy()) return;
+
   if (state.turn === 'morado') {
     state.turn = 'verde';
   } else {
@@ -42,6 +44,42 @@ function advanceTurn() {
   const team = currentTeam();
   showTurnToast(`Turno: ${team.short}`, team.color);
   setStatus(`Es el turno de ${team.name}. Pulsa Iniciar ataque.`);
+}
+
+// Verifica si algun equipo tiene menos de 1000 creditos y termina la partida
+function checkCreditsBankruptcy() {
+  if (state.devMode) return false;
+  const teams = Object.values(state.teams);
+  const broke = teams.filter(t => t.credits < 1000);
+  if (broke.length === 0) return false;
+
+  state.phase = 'ended';
+  attackLocked = true;
+
+  let winner = null;
+  if (broke.length === 1) {
+    winner = teams.find(t => t.credits >= 1000);
+  }
+
+  const reason = broke.map(t => t.name).join(' y ') +
+    (broke.length === 1 ? ' se quedó sin créditos suficientes.' : ' ambos se quedaron sin créditos suficientes.');
+
+  els.attackPanel.dataset.step = 'ended';
+  els.attackStepLabel.textContent = 'Batalla finalizada';
+  els.attackContent.innerHTML = `
+    <div class="panel-note">${winner
+      ? `${reason}<br>Ganador: <b style="color:${winner.color}">${winner.name}</b>`
+      : `${reason}<br><b>Empate por bancarrota.</b>`}</div>
+    <div class="panel-actions"><button class="primary" id="playAgainBtn">Jugar de nuevo</button></div>
+  `;
+  document.getElementById('playAgainBtn')?.addEventListener('click', resetGame);
+  playSound('win', { volume: 1.0 });
+  setStatus(winner
+    ? `${reason} Ganador: ${winner.name}.`
+    : `${reason} Empate por bancarrota.`, 'ok');
+  updateUI();
+  showWinPopup(winner, state.teams.morado, state.teams.verde);
+  return true;
 }
 
 // Termina la partida, determina ganador y muestra el popup
