@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Batalla Contra la IA — Versión Mejorada</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <header id="topbar">
+    <div class="brand">BATALLA <span>CONTRA LA IA</span></div>
+    <div class="pill">Turno <b id="roundLabel">1</b></div>
+    <div class="team-card active" id="teamPurpleCard">
+      <span class="team-dot purple"></span>
+      <span class="team-name">Equipo Morado</span>
+      <span class="team-metric"><b id="purpleCredits">10.000</b> cr</span>
+      <span class="team-metric">Impactos <b id="purpleHits">0</b></span>
+    </div>
+    <div class="team-card" id="teamGreenCard">
+      <span class="team-dot green"></span>
+      <span class="team-name">Equipo Verde</span>
+      <span class="team-metric"><b id="greenCredits">10.000</b> cr</span>
+      <span class="team-metric">Impactos <b id="greenHits">0</b></span>
+    </div>
+    <button id="toggleGridBtn" class="mini-btn">Cuadrícula: ON</button>
+    <button id="devModeBtn" class="mini-btn">Dev: OFF</button>
+    <button id="resetBtn" class="mini-btn">Reiniciar</button>
+  </header>
+
+  <div id="turnToast" class="turn-toast hidden"></div>
+  <div id="launchHelpPopup" class="launch-help hidden" role="dialog" aria-modal="true">
+    <button id="closeLaunchHelpBtn" class="launch-help-close" aria-label="Cerrar ataque">x</button>
+    <strong id="launchPopupTitle">Iniciar ataque</strong>
+    <div id="launchPopupBody"></div>
+  </div>
+
+  <aside id="radarPanel" class="panel compact">
+    <div class="panel-title-row">
+      <h3>Radar</h3>
+      <button id="toggleRadarBtn" class="mini-btn" aria-expanded="false">+</button>
+    </div>
+    <div id="targetList"></div>
+  </aside>
+
+  <div id="winPopup" class="win-popup hidden">
+    <div class="win-popup-inner">
+      <div id="winPopupLabel" class="win-popup-label">GANADOR</div>
+      <img id="winCrown" class="win-crown" src="" alt="corona" style="display:none" />
+      <div id="winPopupWinner" class="win-popup-winner"></div>
+      <div class="win-popup-actions">
+        <button id="winSummaryBtn" class="ghost">Resumen de partida</button>
+        <button id="winPlayAgainBtn" class="primary">Jugar de nuevo</button>
+      </div>
+      <div id="winSummary" class="win-summary hidden"></div>
+    </div>
+  </div>
+
+  <aside id="checkPanel" class="panel compact">
+    <div class="panel-title-row">
+      <h3>Secuencia de disparo</h3>
+      <button id="toggleCheckBtn" class="mini-btn" aria-expanded="false">+</button>
+    </div>
+    <div id="checkContent">
+      <div class="check" id="chkTurn"><span>01</span> Turno habilitado</div>
+      <div class="check" id="chkTech"><span>02</span> Tecnologia elegida</div>
+      <div class="check" id="chkFn"><span>03</span> Funcion valida</div>
+      <div class="check" id="chkLaunch"><span>04</span> Cohete lanzado</div>
+    </div>
+  </aside>
+
+  <section id="attackPanel" class="panel collapsed">
+    <div class="panel-topline">
+      <div>
+        <div class="subtle-label">Turno actual</div>
+        <div id="currentTeamName" class="turn-team">Equipo Morado</div>
+      </div>
+      <button id="startAttackBtn" class="primary compact">Expandir</button>
+    </div>
+
+    <div id="statusText" class="status-text">Presiona “Iniciar ataque” para comenzar el turno.</div>
+
+    <div id="attackStepLabel" class="step-chip">Panel listo</div>
+
+    <div id="attackContent" class="attack-content"></div>
+  </section>
+
+  <script src="configuracion.js"></script>
+  <script src="estado.js"></script>
+  <script src="sonidos.js"></script>
+  <script src="formulas.js"></script>
+  <script src="enemigos.js"></script>
+  <script src="dibujo.js"></script>
+  <script src="cohete.js"></script>
+  <script src="paneles.js"></script>
+  <script src="partida.js"></script>
+  <script src="principal.js"></script>
+</body>
+</html>
