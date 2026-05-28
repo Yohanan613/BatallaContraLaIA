@@ -69,16 +69,24 @@ function detectFormulaType(raw) {
   return 'lineal';
 }
 
+// Comprueba si una formula (normalizada) coincide con alguno de los ejemplos del tech.
+function isFormulaInExamples(raw, techKey) {
+  const tech = TECNOLOGIAS[techKey];
+  if (!tech || !tech.examples) return false;
+  const normalized = normalizeFormulaText(raw);
+  return tech.examples.some(ex => normalizeFormulaText(ex) === normalized);
+}
+
 // Verifica que la funcion escrita corresponda a la tecnologia seleccionada.
 function validateFormulaForTech(raw, techKey) {
   const detected = detectFormulaType(raw);
   if (!detected) {
-    return { ok: false, message: 'La funcion debe incluir x.' };
+    return { ok: false, message: 'La función debe incluir x.' };
   }
   if (detected !== techKey) {
     const expected = TECNOLOGIAS[techKey]?.label || 'seleccionada';
     const found = detected === 'otra' ? 'otro tipo de funcion' : (TECNOLOGIAS[detected]?.label || detected);
-    return { ok: false, message: `Seleccionaste ${expected}, pero la funcion parece ${found}.` };
+    return { ok: false, message: `Seleccionaste ${expected}, pero la función parece ${found}.` };
   }
-  return { ok: true, message: `Funcion ${TECNOLOGIAS[techKey].label} valida. Revisa la ruta y lanza.` };
+  return { ok: true, message: `Función ${TECNOLOGIAS[techKey].label} válida. Revisa la ruta y lanza.` };
 }

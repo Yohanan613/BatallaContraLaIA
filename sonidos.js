@@ -6,6 +6,7 @@
 // Rutas de los archivos de sonido
 const SOUND_SRCS = {
   ambiente:           'sonidos/ambiente.mp3',
+  boton:              'sonidos/boton.mp3',
   coin:               'sonidos/coin.mp3',
   explosionAvion:     'sonidos/explosionaeroplane.mp3',
   explosionBarco:     'sonidos/explosionboat.mp3',
@@ -47,6 +48,8 @@ function startAmbientSound() {
   const tryPlay = () => sounds.ambiente?.play().catch(() => {});
   tryPlay();
   // Reintenta al primer gesto del usuario si el navegador bloquea autoplay
-  document.addEventListener('click', tryPlay, { once: true });
-  document.addEventListener('keydown', tryPlay, { once: true });
+  document.addEventListener('click',     tryPlay, { once: true });
+  document.addEventListener('keydown',   tryPlay, { once: true });
+  document.addEventListener('mousemove', tryPlay, { once: true });
+  document.addEventListener('touchstart', tryPlay, { once: true });
 }

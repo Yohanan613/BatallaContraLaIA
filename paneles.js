@@ -51,24 +51,34 @@ function updateUI() {
   els.greenHits.textContent = state.teams.verde.hits;
   els.currentTeamName.textContent = currentTeam().name;
   els.currentTeamName.style.color = currentTeam().color;
+  const squadEl = document.getElementById('currentSquadName');
+  if (squadEl) {
+    const sname = (typeof currentSquadName === 'function') ? currentSquadName(state.turn) : '';
+    squadEl.textContent = sname;
+    squadEl.style.display = sname ? 'block' : 'none';
+  }
   els.teamPurpleCard.classList.toggle('active', state.turn === 'morado');
   els.teamGreenCard.classList.toggle('active', state.turn === 'verde');
-  els.startAttackBtn.disabled = state.phase === 'ended';
-  els.startAttackBtn.textContent = attackPanelCollapsed ? 'Expandir' : 'Colapsar';
-  els.attackPanel.classList.toggle('collapsed', attackPanelCollapsed);
+  els.attackPanel.classList.remove('collapsed');
   els.devModeBtn.textContent = `Dev: ${state.devMode ? 'ON' : 'OFF'}`;
   els.devModeBtn.classList.toggle('active', state.devMode);
-  els.toggleGridBtn.textContent = `Cuadricula: ${gridVisible ? 'ON' : 'OFF'}`;
+  els.toggleGridBtn.textContent = `Cuadrícula: ${gridVisible ? 'ON' : 'OFF'}`;
 }
 
 // Renderiza el contenido del panel de ataque segun el paso actual
 function renderAttackPanel() {
   const team = currentTeam();
   els.attackPanel.dataset.step = state.panelStep;
+  const inAttack = state.panelStep === 'tech' || state.panelStep === 'formula';
+  document.body.classList.toggle('split-mode', inAttack);
+  drawScaleFactor = inAttack ? SPLIT_MODE_ENEMY_SCALE : 1.0;
+  recalcTargetPixels();
+  resize();
+
   if (state.panelStep === 'idle') {
     els.attackStepLabel.textContent = 'Panel listo';
     els.attackContent.innerHTML = `
-      <div class="credit-line">Creditos de ${team.short}: <b>${formatCredits(team.credits)}</b> cr.</div>
+      <div class="credit-line">Créditos de ${team.short}: <b>${formatCredits(team.credits)}</b> cr.</div>
       <div class="panel-actions">
         <button class="primary" id="panelStartBtn" ${rocket || attackLocked || state.phase === 'ended' ? 'disabled' : ''}>Iniciar ataque</button>
       </div>
@@ -77,30 +87,29 @@ function renderAttackPanel() {
     return;
   }
 
-  if (state.panelStep === 'tech' || state.panelStep === 'formula') {
-    els.attackStepLabel.textContent = 'Ataque abierto';
-    els.attackContent.innerHTML = `
-      <div class="credit-line">Configura el ataque en la ventana emergente.</div>
-    `;
+  if (inAttack) {
     renderAttackPopup();
     return;
   }
 }
 
-// Renderiza el popup flotante de seleccion de tecnologia o formula
+// Renderiza el contenido de seleccion de tecnologia o formula directamente en attackContent
 function renderAttackPopup() {
-  if (!els.launchPopupBody) return;
   const team = currentTeam();
 
   if (state.panelStep === 'tech') {
-    els.launchPopupTitle.textContent = 'Seleccionar tecnología';
+    els.attackStepLabel.textContent = 'Seleccionar tecnología';
     const techHtml = Object.values(TECNOLOGIAS).map(t => {
       const disabled = !state.devMode && team.credits < t.costo;
+      let formulaHtml = t.formula;
+      if (typeof katex !== 'undefined') {
+        try { formulaHtml = katex.renderToString(t.latexFormula || t.formula, { throwOnError: false, displayMode: false }); } catch (_) {}
+      }
       return `
         <button class="tech-btn ${state.selectedTech === t.key ? 'active' : ''}" data-tech="${t.key}" ${disabled ? 'disabled' : ''}>
           <span class="main">
             <span class="label" style="color:${t.color}">[${t.tag}] ${t.label}</span>
-            <span class="formula">${t.formula}</span>
+            <span class="formula">${formulaHtml}</span>
             <span class="desc">${t.desc}</span>
           </span>
           <span class="cost">${fmt(t.costo)} cr</span>
@@ -108,14 +117,14 @@ function renderAttackPopup() {
       `;
     }).join('');
 
-    els.launchPopupBody.innerHTML = `
-      <div class="credit-line">Creditos de ${team.short}: <b>${formatCredits(team.credits)}</b> cr.</div>
+    els.attackContent.innerHTML = `
+      <div class="credit-line">Créditos de ${team.short}: <b>${formatCredits(team.credits)}</b> cr.</div>
       <div class="tech-list">${techHtml}</div>
       <div class="panel-actions">
         <button class="ghost" id="cancelTechBtn">Cancelar</button>
       </div>
     `;
-    els.launchPopupBody.querySelectorAll('[data-tech]').forEach(btn => {
+    els.attackContent.querySelectorAll('[data-tech]').forEach(btn => {
       btn.addEventListener('click', () => selectTech(btn.dataset.tech));
     });
     document.getElementById('cancelTechBtn')?.addEventListener('click', cancelAttackPanel);
@@ -124,16 +133,25 @@ function renderAttackPopup() {
 
   if (state.panelStep === 'formula') {
     const tech = TECNOLOGIAS[state.selectedTech];
-    const examples = tech.examples.map(ex => `<span class="example-chip" data-example="${ex}">${ex}</span>`).join('');
-    els.launchPopupTitle.textContent = state.devMode ? 'Funcion libre (Modo Dev)' : `Funcion ${tech.label}`;
-    els.launchPopupBody.innerHTML = `
-      <div class="credit-line">${state.devMode ? 'Modo DEV activo: cualquier funcion es valida, tecnologia ignorada y creditos infinitos.' : `Tecnologia: <b style="color:${tech.color}">${tech.label}</b> · Costo: <b>${fmt(tech.costo)}</b> cr.`}</div>
+    const examples = tech.examples.map(ex => {
+      let inner = ex;
+      if (typeof katex !== 'undefined') {
+        try {
+          inner = katex.renderToString(formulaToLatex(ex), { throwOnError: false, displayMode: false });
+        } catch (_) {}
+      }
+      return `<span class="example-chip" data-example="${ex}">${inner}</span>`;
+    }).join('');
+    els.attackStepLabel.textContent = state.devMode ? 'Función libre (Modo Dev)' : `Función ${tech.label}`;
+    els.attackContent.innerHTML = `
+      <div class="credit-line">${state.devMode ? 'Modo DEV activo: cualquier función es válida, tecnología ignorada y créditos infinitos.' : `Tecnología: <b style="color:${tech.color}">${tech.label}</b> · Costo: <b>${fmt(tech.costo)}</b> cr.`}</div>
       <div class="formula-block">
         <label>Escribe y = f(x)</label>
-        <input id="formulaInput" autocomplete="off" placeholder="Ej: -0.4*x+3 | 0.05*x*x-2 | pow(1.15,x)-1" value="${escapeHtml(state.currentFnText)}" />
+        <input id="formulaInput" autocomplete="off" placeholder="Escribe tu fórmula" value="${escapeHtml(state.currentFnText)}" />
       </div>
+      <div id="latexPreview" class="latex-preview"><span class="latex-placeholder">La fórmula aparecerá aquí en formato matemático</span></div>
       <div class="examples">${examples}</div>
-      <div id="formulaFeedback" class="small-feedback">Escribe una funcion valida para lanzar.</div>
+      <div id="formulaFeedback" class="small-feedback">Escribe una función válida para lanzar.</div>
       <div class="panel-actions">
         <button class="ghost" id="backTechBtn">Volver</button>
         <button class="primary" id="launchBtn" disabled>Lanzar cohete</button>
@@ -148,7 +166,7 @@ function renderAttackPopup() {
     });
     document.getElementById('backTechBtn')?.addEventListener('click', openTechPanel);
     document.getElementById('launchBtn')?.addEventListener('click', launchRocket);
-    els.launchPopupBody.querySelectorAll('[data-example]').forEach(chip => {
+    els.attackContent.querySelectorAll('[data-example]').forEach(chip => {
       chip.addEventListener('click', () => {
         input.value = chip.dataset.example;
         updateFormulaFromInput(input.value);
@@ -157,6 +175,14 @@ function renderAttackPopup() {
     });
     updateFormulaFromInput(input.value, true);
   }
+}
+
+function showBonusMessage(amount) {
+  const el = document.createElement('div');
+  el.className = 'bonus-message';
+  el.textContent = `✦ BONUS +${fmt(amount)} cr por fórmula nueva`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
 
 // Valida la funcion en tiempo real y habilita/deshabilita el boton de lanzar
@@ -177,17 +203,73 @@ function updateFormulaFromInput(text, renderOnly = false) {
     previewTech = null;
     if (text.trim()) {
       setChecklist('chkFn', false);
-      if (feedback) feedback.textContent = typeValidation?.message || 'Funcion invalida. Debe incluir x y dar valores numericos.';
+      if (feedback) feedback.textContent = typeValidation?.message || 'Función inválida. Debe incluir x y dar valores numéricos.';
     } else {
       setChecklist('chkFn', false);
-      if (feedback) feedback.textContent = 'Escribe una funcion valida para lanzar.';
+      if (feedback) feedback.textContent = 'Escribe una función válida para lanzar.';
     }
     if (launchBtn) launchBtn.disabled = true;
   }
+  renderLatex(text);
   if (!renderOnly) {
     const ok = Boolean(fn && typeValidation?.ok);
-    setStatus(ok ? (state.devMode ? 'Modo Dev: funcion lista para lanzar.' : 'Funcion lista para lanzar.') : (typeValidation?.message || 'Funcion invalida. Debe incluir x y dar valores numericos.'), ok ? '' : 'bad');
+    setStatus(ok ? (state.devMode ? 'Modo Dev: función lista para lanzar.' : 'Función lista para lanzar.') : (typeValidation?.message || 'Función inválida. Debe incluir x y dar valores numéricos.'), ok ? '' : 'bad');
   }
+}
+
+// Convierte texto de formula a LaTeX legible
+function formulaToLatex(raw) {
+  if (!raw || !raw.trim()) return '';
+  let s = raw.trim().replace(/\s+/g, '').replace(/,/g, '.');
+
+  // Funciones matematicas
+  s = s.replace(/Math\.sqrt\(([^)]+)\)/g, '\\sqrt{$1}');
+  s = s.replace(/Math\.sin\(([^)]+)\)/g, '\\sin($1)');
+  s = s.replace(/Math\.cos\(([^)]+)\)/g, '\\cos($1)');
+  s = s.replace(/Math\.tan\(([^)]+)\)/g, '\\tan($1)');
+  s = s.replace(/Math\.log\(([^)]+)\)/g, '\\ln($1)');
+  s = s.replace(/Math\.abs\(([^)]+)\)/g, '\\left|$1\\right|');
+  s = s.replace(/Math\.PI/gi, '\\pi');
+  s = s.replace(/Math\.pow\(([^,)]+),([^)]+)\)/g, '{$1}^{$2}');
+
+  // x*x, x**2, x^2 → x^{2}
+  s = s.replace(/x\*\*(\d+)/g, 'x^{$1}');
+  s = s.replace(/x\^(\d+)/g, 'x^{$1}');
+  s = s.replace(/x\*x/g, 'x^{2}');
+
+  // base numerica^x  (exponencial)
+  s = s.replace(/([\d.]+)\^x/g, '{$1}^{x}');
+  s = s.replace(/([\d.]+)\*\*x/g, '{$1}^{x}');
+
+  // coeficiente*x
+  s = s.replace(/([\d.]+)\*x/g, '$1x');
+
+  // multiplicaciones restantes
+  s = s.replace(/\*/g, ' \\cdot ');
+
+  // espaciado alrededor de + y -
+  s = s.replace(/\+/g, ' + ');
+  s = s.replace(/([x\d)}])-/g, '$1 - ');
+
+  return 'y = ' + s.replace(/\s+/g, ' ').trim();
+}
+
+// Renderiza la formula en el div #latexPreview usando KaTeX
+function renderLatex(text) {
+  const el = document.getElementById('latexPreview');
+  if (!el) return;
+  if (!text || !text.trim()) {
+    el.innerHTML = '<span class="latex-placeholder">La fórmula aparecerá aquí en formato matemático</span>';
+    return;
+  }
+  const latex = formulaToLatex(text);
+  if (typeof katex !== 'undefined') {
+    try {
+      katex.render(latex, el, { throwOnError: false, displayMode: true });
+      return;
+    } catch (_) { /* fallback */ }
+  }
+  el.textContent = latex;
 }
 
 function escapeHtml(text) {
@@ -206,10 +288,6 @@ function closeLaunchHelp() {
   els.launchHelpPopup?.classList.add('hidden');
 }
 
-function toggleAttackPanel() {
-  attackPanelCollapsed = !attackPanelCollapsed;
-  updateUI();
-}
 
 // Muestra el popup de ganador con cualquier equipo (para modo dev)
 function previewWin(teamId) {
@@ -242,8 +320,8 @@ function updateCheckPanelForDevMode() {
     if (h3) h3.textContent = 'Secuencia de disparo';
     content.innerHTML =
       '<div class="check" id="chkTurn"><span>01</span> Turno habilitado</div>' +
-      '<div class="check" id="chkTech"><span>02</span> Tecnologia elegida</div>' +
-      '<div class="check" id="chkFn"><span>03</span> Funcion valida</div>' +
+      '<div class="check" id="chkTech"><span>02</span> Tecnología elegida</div>' +
+      '<div class="check" id="chkFn"><span>03</span> Función válida</div>' +
       '<div class="check" id="chkLaunch"><span>04</span> Cohete lanzado</div>';
     resetChecklistForTurn();
     setChecklist('chkTurn', true);
@@ -253,7 +331,7 @@ function updateCheckPanelForDevMode() {
 function toggleDevMode() {
   state.devMode = !state.devMode;
   if (state.devMode) {
-    setStatus('Modo Dev activado: dinero infinito y validacion de funcion sin restriccion por tecnologia.', 'ok');
+    setStatus('Modo Dev activado: dinero infinito y validación de función sin restricción por tecnología.', 'ok');
   } else {
     setStatus('Modo Dev desactivado: reglas normales restauradas.');
   }
@@ -279,7 +357,7 @@ function toggleCheckPanel() {
 // Abre el panel de ataque en el paso correcto segun modo
 function openTechPanel() {
   if (rocket || attackLocked || state.phase === 'ended') return;
-  showLaunchHelp();
+  attackPanelCollapsed = false;
   state.panelStep = state.devMode ? 'formula' : 'tech';
   state.selectedTech = state.devMode ? 'lineal' : null;
   state.currentFnText = '';
@@ -290,8 +368,8 @@ function openTechPanel() {
   setChecklist('chkFn', false);
   setChecklist('chkLaunch', false);
   setStatus(state.devMode
-    ? `Turno de ${currentTeam().name}. Modo Dev activo: escribe cualquier funcion.`
-    : `Turno de ${currentTeam().name}. Elige una tecnologia de disparo.`);
+    ? `Turno de ${currentTeam().name}. Modo Dev activo: escribe cualquier función.`
+    : `Turno de ${currentTeam().name}. Elige una tecnología de disparo.`);
   renderAttackPanel();
 }
 
@@ -300,7 +378,7 @@ function selectTech(key) {
   setChecklist('chkTech', true);
   state.panelStep = 'formula';
   playSound('coin', { volume: 0.70 });
-  setStatus(`Tecnologia ${TECNOLOGIAS[key].label} seleccionada. Escribe la funcion.`);
+  setStatus(`Escribe la función para ${TECNOLOGIAS[key].label}.`);
   renderAttackPanel();
 }
 

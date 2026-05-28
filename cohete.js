@@ -12,11 +12,11 @@ function launchRocket() {
   const tech = TECNOLOGIAS[resolvedTechKey];
   const fn = parseFunction(state.currentFnText);
   if (!tech && !state.devMode) {
-    setStatus('Primero selecciona una tecnologia.', 'bad');
+    setStatus('Primero selecciona una tecnología.', 'bad');
     return;
   }
   if (!fn) {
-    setStatus('La funcion no es valida. Debe usar x y generar valores numericos.', 'bad');
+    setStatus('La función no es válida. Debe usar x y generar valores numéricos.', 'bad');
     return;
   }
   const typeValidation = state.devMode ? { ok: true } : validateFormulaForTech(state.currentFnText, resolvedTechKey);
@@ -25,7 +25,7 @@ function launchRocket() {
     return;
   }
   if (!state.devMode && team.credits < tech.costo) {
-    setStatus(`${team.short} no tiene creditos suficientes para ${tech.label}.`, 'bad');
+    setStatus(`${team.short} no tiene créditos suficientes para ${tech.label}.`, 'bad');
     return;
   }
 
@@ -41,6 +41,7 @@ function launchRocket() {
   renderAttackPanel();
   updateUI();
 
+  trajectoryPreview.isCustomFormula = !state.devMode && !isFormulaInExamples(state.currentFnText, resolvedTechKey);
   startTrajectoryPreview(fn, resolvedTechKey, state.turn);
 }
 
@@ -67,7 +68,7 @@ function startTrajectoryPreview(fn, techId, teamId) {
   trajectoryPreview.teamId = teamId;
   trajectoryPreview.startedAt = performance.now();
   trajectoryPreview.points = computeTrajectoryPoints(fn);
-  setStatus('Calculando trayectoria... El cohete se lanzara en 2.5 segundos.');
+  setStatus('Calculando trayectoria... El cohete se lanzará en 2.5 segundos.');
   playSound('sequence', { volume: 1.0 });
   trajectoryPreview.timer = setTimeout(() => {
     trajectoryPreview.active = false;
@@ -95,11 +96,12 @@ function actuallyLaunchRocket() {
     lastPx: p.x,
     lastPy: p.y,
     trail: [{ x: p.x, y: p.y }],
+    isCustomFormula: trajectoryPreview.isCustomFormula || false,
   };
   if (state.devMode) {
-    setStatus(`${team.name} lanzo un cohete en Modo Dev.`, 'ok');
+    setStatus(`${team.name} lanzó un cohete en Modo Dev.`, 'ok');
   } else {
-    setStatus(`${team.name} lanzo un cohete con tecnologia ${tech.label}.`, 'ok');
+    setStatus(`${team.name} lanzó un cohete con tecnología ${tech.label}.`, 'ok');
   }
 }
 
@@ -158,7 +160,7 @@ function checkImpact() {
   if (!rocket) return false;
   for (const t of targets) {
     if (!t.alive) continue;
-    const hb = getHitboxPixels(t);
+    const hb = getKillHitboxPixels(t);
     if (rocket.px >= hb.x && rocket.px <= hb.x + hb.w && rocket.py >= hb.y && rocket.py <= hb.y + hb.h) {
       t.alive = false;
       const team = state.teams[rocket.teamId];
@@ -179,13 +181,21 @@ function checkImpact() {
       camera.phase = 'holding';
       camera.holdUntil = performance.now() + 950;
       camera.slowMoFactor = 1;
+      missEffect = null;
+      rocketInHitbox = false;
+      const wasCustomFormula = rocket.isCustomFormula;
       updateTargetPanel();
       updateUI();
       rocket = null;
       if (state.devMode) {
         setStatus(`Impacto confirmado sobre ${t.code} en Modo Dev.`, 'ok');
       } else {
-        setStatus(`Impacto confirmado sobre ${t.code}. +${fmt(tech.recompensa)} creditos para ${team.short}.`, 'ok');
+        setStatus(`Impacto confirmado sobre ${t.code}. +${fmt(tech.recompensa)} créditos para ${team.short}.`, 'ok');
+        if (wasCustomFormula) {
+          const bonus = 5000;
+          team.credits += bonus;
+          if (typeof showBonusMessage === 'function') showBonusMessage(bonus);
+        }
       }
       if (allTargetsDefeated()) {
         endGame();
@@ -211,17 +221,18 @@ function destroyRocketOutOfBounds() {
     camera.targetZoom = 1;
     camera.slowMoFactor = 1;
   }
+  missEffect = null;
   stopSound('missilfly');
   rocket = null;
   scheduleTurnAdvance();
   attackLocked = true;
-  setStatus('Cohete fuera del area de lanzamiento.', 'bad');
+  setStatus('Cohete fuera del área de lanzamiento.', 'bad');
 }
 
 // Activa camara lenta cuando el cohete se acerca a un objetivo
 function checkProximityForSlowMo() {
   if (!rocket) return;
-  if (camera.phase !== 'idle' && camera.phase !== 'zooming') return;
+  if (camera.phase === 'holding') return;
 
   let nearAny = false;
   for (const t of targets) {
@@ -248,6 +259,32 @@ function checkProximityForSlowMo() {
     camera.targetZoom = 1;
     camera.slowMoFactor = 1;
   }
+}
+
+// Detecta cuando el cohete sale de la hitbox visual sin haber matado → activa sssh
+function checkRocketHitboxContact() {
+  if (!rocket) { rocketInHitbox = false; return; }
+
+  let inAny = false;
+  for (const t of targets) {
+    if (!t.alive) continue;
+    const hb = getHitboxPixels(t);
+    if (rocket.px >= hb.x && rocket.px <= hb.x + hb.w &&
+        rocket.py >= hb.y && rocket.py <= hb.y + hb.h) {
+      inAny = true;
+      break;
+    }
+  }
+
+  if (!inAny && rocketInHitbox) {
+    const now = performance.now();
+    if (now >= missEffectCooldownUntil) {
+      missEffect = { startedAt: now };
+      missEffectCooldownUntil = now + 1000;
+    }
+  }
+
+  rocketInHitbox = inAny;
 }
 
 // Avanza la posicion del cohete un paso de simulacion

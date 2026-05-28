@@ -1,0 +1,125 @@
+.panel {
+  position: fixed;
+  z-index: 40;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 38px rgba(0, 0, 0, .35), 0 0 0 1px rgba(255, 255, 255, .03) inset;
+  backdrop-filter: blur(5px);
+
+  h3 {
+    font-size: var(--fs-base);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--orange);
+  }
+}
+
+.panel-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+// ── Radar ────────────────────────────────────────────────────
+#radarPanel {
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 220px;
+  padding: 10px 12px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  font-size: var(--fs-xs);
+
+  h3 {
+    font-size: var(--fs-sm);
+    letter-spacing: 1px;
+  }
+
+  &.compact {
+    width: 110px;
+    padding: 6px 8px;
+
+    .panel-title-row { margin-bottom: 4px; }
+
+    h3 {
+      font-size: var(--fs-xs);
+      letter-spacing: 1px;
+    }
+
+    .target-row {
+      grid-template-columns: 30px;
+      gap: 3px;
+      padding: 3px 0;
+      font-size: var(--fs-xs);
+
+      > div:nth-child(2),
+      > div:nth-child(3) { display: none; }
+    }
+  }
+}
+
+.target-row {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 5px;
+  align-items: center;
+  font-size: var(--fs-xs);
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+
+  &:last-child { border-bottom: none; }
+}
+
+.target-code { color: var(--cyan); font-weight: 900; }
+.target-zone { color: var(--muted); font-size: var(--fs-xs); text-transform: uppercase; margin-top: 2px; }
+.target-dead { opacity: .35; text-decoration: line-through; }
+
+// ── Check panel ──────────────────────────────────────────────
+#checkPanel {
+  right: 12px;
+  bottom: 17px;
+  width: 320px;
+  padding: 16px;
+
+  &.compact {
+    padding: 8px 12px;
+
+    #checkContent { display: none; }
+    .panel-title-row { margin-bottom: 0; }
+  }
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6c788a;
+  font-size: var(--fs-base);
+  margin: 10px 0;
+
+  span {
+    width: 32px;
+    height: 25px;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, .13);
+    color: #69768c;
+    font-size: var(--fs-sm);
+  }
+
+  &.ok {
+    color: var(--green);
+
+    span {
+      color: var(--green);
+      border-color: var(--green);
+      background: rgba(124, 255, 35, .08);
+    }
+  }
+}

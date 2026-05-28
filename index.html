@@ -5,11 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Batalla Contra la IA — Versión Mejorada</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
   <canvas id="game"></canvas>
 
-  <header id="topbar">
+  <header id="topbar" class="collapsed">
     <div class="brand">BATALLA <span>CONTRA LA IA</span></div>
     <div class="pill">Turno <b id="roundLabel">1</b></div>
     <div class="team-card active" id="teamPurpleCard">
@@ -24,10 +26,30 @@
       <span class="team-metric"><b id="greenCredits">10.000</b> cr</span>
       <span class="team-metric">Impactos <b id="greenHits">0</b></span>
     </div>
-    <button id="toggleGridBtn" class="mini-btn">Cuadrícula: ON</button>
-    <button id="devModeBtn" class="mini-btn">Dev: OFF</button>
-    <button id="resetBtn" class="mini-btn">Reiniciar</button>
+    <div class="topbar-extras">
+      <button id="toggleGridBtn" class="mini-btn">Cuadrícula: ON</button>
+      <button id="devModeBtn" class="mini-btn">Dev: OFF</button>
+      <button id="jugadoresBtn" class="mini-btn">Jugadores</button>
+      <button id="resetBtn" class="mini-btn">Reiniciar</button>
+    </div>
+    <button id="topbarToggleBtn" class="mini-btn topbar-toggle" aria-label="Expandir/colapsar barra superior">▾</button>
   </header>
+
+  <!-- Pop-up configuracion de jugadores -->
+  <div id="playerSetupPopup" class="player-overlay hidden">
+    <div class="player-setup-inner">
+      <h2>CONFIGURAR PARTIDA</h2>
+      <div class="setup-count-row">
+        <label for="playerCountInput">Total de jugadores:</label>
+        <input type="number" id="playerCountInput" min="2" max="300" value="20" />
+      </div>
+      <div id="playerSetupPreview" class="player-setup-preview"></div>
+      <div class="player-setup-actions">
+        <button id="normalModeBtn" class="ghost">Sin grupos - Normal Mode</button>
+        <button class="primary" id="playerSetupStartBtn">Comenzar batalla</button>
+      </div>
+    </div>
+  </div>
 
   <div id="turnToast" class="turn-toast hidden"></div>
   <div id="launchHelpPopup" class="launch-help hidden" role="dialog" aria-modal="true">
@@ -64,19 +86,20 @@
     </div>
     <div id="checkContent">
       <div class="check" id="chkTurn"><span>01</span> Turno habilitado</div>
-      <div class="check" id="chkTech"><span>02</span> Tecnologia elegida</div>
-      <div class="check" id="chkFn"><span>03</span> Funcion valida</div>
+      <div class="check" id="chkTech"><span>02</span> Tecnología elegida</div>
+      <div class="check" id="chkFn"><span>03</span> Función válida</div>
       <div class="check" id="chkLaunch"><span>04</span> Cohete lanzado</div>
     </div>
   </aside>
 
   <section id="attackPanel" class="panel collapsed">
+    <div id="splitResizeHandle" aria-hidden="true"></div>
     <div class="panel-topline">
       <div>
         <div class="subtle-label">Turno actual</div>
         <div id="currentTeamName" class="turn-team">Equipo Morado</div>
+        <div id="currentSquadName" class="squad-turn-name" style="display:none"></div>
       </div>
-      <button id="startAttackBtn" class="primary compact">Expandir</button>
     </div>
 
     <div id="statusText" class="status-text">Presiona “Iniciar ataque” para comenzar el turno.</div>
@@ -87,6 +110,7 @@
   </section>
 
   <script src="configuracion.js"></script>
+  <script src="jugadores.js"></script>
   <script src="estado.js"></script>
   <script src="sonidos.js"></script>
   <script src="formulas.js"></script>

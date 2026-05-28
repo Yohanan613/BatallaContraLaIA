@@ -1,0 +1,27 @@
+{
+  "name": "batallacontralaia",
+  "version": "1.0.0",
+  "description": "Juego educativo para el aula donde dos equipos compiten lanzando cohetes con funciones matematicas (lineal, cuadratica, exponencial) para abatir objetivos en el canvas.",
+  "main": "cohete.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "sass": "sass style.scss style.css",
+    "sass:watch": "sass --watch style.scss:style.css"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yohanan613/BatallaContraLaIA.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Yohanan613/BatallaContraLaIA/issues"
+  },
+  "homepage": "https://github.com/Yohanan613/BatallaContraLaIA#readme",
+  "devDependencies": {
+    "sass": "^1.100.0"
+  }
+  
+}

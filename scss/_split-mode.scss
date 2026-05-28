@@ -1,0 +1,136 @@
+body.split-mode {
+  canvas {
+    width: calc(100vw - var(--split-panel-width)) !important;
+    height: 100vh !important;
+    display: block;
+  }
+
+  #attackPanel {
+    right: 0;
+    left: auto;
+    bottom: 0;
+    top: 0;
+    width: var(--split-panel-width);
+    min-width: 0;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+    border-left: 1px solid var(--line-strong);
+    padding: 66px 22px 22px;
+    overflow-y: auto;
+    gap: 14px;
+    background: rgba(5, 10, 24, .98);
+
+    .step-chip { display: none; }
+
+    .formula-block,
+    .formula-block input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .examples {
+      align-items: flex-start;
+      justify-content: flex-start;
+    }
+
+    &[data-step="formula"] {
+      #formulaFeedback { text-align: left; }
+
+      .panel-actions {
+        justify-content: flex-start;
+        gap: 16px;
+
+        button { flex: 0 1 auto; min-width: 140px; }
+      }
+    }
+
+    // Layout columna por defecto
+    .attack-content,
+    &[data-step="tech"] .attack-content,
+    &[data-step="formula"] .attack-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .status-text {
+      display: block !important;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      white-space: normal;
+    }
+
+    .small-feedback { display: block !important; }
+
+    // Narrow (< 400px)
+    &[data-size="narrow"] {
+      padding-left: 14px;
+      padding-right: 14px;
+      padding-top: 56px;
+
+      .tech-btn { padding: 7px 8px; }
+    }
+
+    // Tech-list: 1 columna por defecto
+    &[data-step="tech"] .tech-list { grid-template-columns: 1fr; }
+
+    // Medium (400–639px): 2 columnas
+    &[data-size="medium"][data-step="tech"] .tech-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    // Wide (≥ 640px): 3 columnas + grid layouts restaurados
+    &[data-size="wide"] {
+      &[data-step="tech"] {
+        .tech-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+        .attack-content {
+          display: grid;
+          grid-template-columns: auto 1fr auto;
+          align-items: center;
+          gap: 8px;
+        }
+      }
+
+      &[data-step="formula"] {
+        .attack-content {
+          display: grid;
+          grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+          align-items: end;
+          gap: 8px;
+        }
+
+        .credit-line,
+        .examples,
+        .panel-actions { grid-column: 1 / -1; }
+
+        .small-feedback { display: none !important; }
+      }
+    }
+  }
+
+  #radarPanel,
+  #checkPanel { display: none !important; }
+}
+
+// ── Handle de resize horizontal ──────────────────────────────
+#splitResizeHandle {
+  display: none;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  z-index: 10;
+  transition: background .15s;
+}
+
+body.split-mode #splitResizeHandle { display: block; }
+
+#splitResizeHandle:hover,
+#splitResizeHandle.dragging { background: var(--line-strong); }

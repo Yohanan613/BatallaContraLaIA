@@ -21,7 +21,6 @@ const els = {
   toggleRadarBtn: document.getElementById('toggleRadarBtn'),
   targetList: document.getElementById('targetList'),
   statusText: document.getElementById('statusText'),
-  startAttackBtn: document.getElementById('startAttackBtn'),
   attackPanel: document.getElementById('attackPanel'),
   launchHelpPopup: document.getElementById('launchHelpPopup'),
   launchPopupTitle: document.getElementById('launchPopupTitle'),
@@ -39,6 +38,8 @@ const els = {
   chkLaunch: document.getElementById('chkLaunch'),
   checkPanel: document.getElementById('checkPanel'),
   toggleCheckBtn: document.getElementById('toggleCheckBtn'),
+  topbar: document.getElementById('topbar'),
+  topbarToggleBtn: document.getElementById('topbarToggleBtn'),
 };
 
 // Bucle principal: actualiza fisica y dibuja cada fotograma
@@ -50,6 +51,7 @@ function drawFrame(now) {
   const dt = rawDt * camera.slowMoFactor;
   updateRocket(dt);
   checkProximityForSlowMo();
+  checkRocketHitboxContact();
   updateCamera(rawDt);
   maybeHideTurnToast(now);
 
@@ -67,6 +69,7 @@ function drawFrame(now) {
   drawTargets(now);
   drawTrajectoryPreview(now);
   drawRocket(now);
+  drawMissEffect(now);
   drawExplosions(now);
   ctx.restore();
 
@@ -75,8 +78,22 @@ function drawFrame(now) {
   requestAnimationFrame(drawFrame);
 }
 
+// Sonido global para cualquier boton (excepto tech-btn y launchBtn que ya tienen su propio sonido)
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  if (btn.classList.contains('tech-btn')) return;
+  if (btn.id === 'launchBtn') return;
+  playSound('boton', { volume: 0.7 });
+});
+
+// Colapsa/expande la barra superior
+els.topbarToggleBtn?.addEventListener('click', () => {
+  const collapsed = els.topbar.classList.toggle('collapsed');
+  els.topbarToggleBtn.textContent = collapsed ? '▾' : '▴';
+});
+
 // Listeners de botones globales
-els.startAttackBtn.addEventListener('click', toggleAttackPanel);
 els.closeLaunchHelpBtn?.addEventListener('click', cancelAttackPanel);
 els.toggleRadarBtn?.addEventListener('click', toggleRadarCompact);
 els.toggleCheckBtn?.addEventListener('click', toggleCheckPanel);
@@ -86,6 +103,37 @@ els.toggleGridBtn.addEventListener('click', () => {
   gridVisible = !gridVisible;
   updateUI();
 });
+
+// Resize horizontal del panel de ataque en split-mode
+(function () {
+  const MIN_PANEL_PX = 410;
+  const MAX_PANEL_RATIO = 0.72;
+  const handle = document.getElementById('splitResizeHandle');
+  let dragging = false;
+
+  handle.addEventListener('mousedown', e => {
+    if (!document.body.classList.contains('split-mode')) return;
+    dragging = true;
+    handle.classList.add('dragging');
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const panelPx = Math.max(MIN_PANEL_PX, Math.min(window.innerWidth * MAX_PANEL_RATIO, window.innerWidth - e.clientX));
+    document.documentElement.style.setProperty('--split-panel-width', panelPx + 'px');
+    resize();
+    recalcTargetPixels();
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.userSelect = '';
+  });
+})();
 
 // Inicializa el juego: carga assets, crea enemigos y arranca el loop
 async function init() {
@@ -100,6 +148,7 @@ async function init() {
   updateUI();
   showTurnToast('Turno: Morado', state.teams.morado.color);
   setStatus('Presiona "Iniciar ataque" para comenzar el turno.');
+  confirmNormalMode();
   requestAnimationFrame(drawFrame);
 }
 

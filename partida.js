@@ -24,12 +24,14 @@ function advanceTurn() {
 
   if (checkCreditsBankruptcy()) return;
 
+  const prevTurn = state.turn;
   if (state.turn === 'morado') {
     state.turn = 'verde';
   } else {
     state.turn = 'morado';
     state.round += 1;
   }
+  if (typeof advanceSquad === 'function') advanceSquad(prevTurn);
 
   attackLocked = false;
   state.panelStep = 'idle';
@@ -137,8 +139,8 @@ function showWinPopup(winner, p, g) {
     const visible = !summaryEl.classList.contains('hidden');
     if (!visible) {
       summaryEl.innerHTML =
-        '<div><b style="color:#ff4df0">Equipo Morado</b> - Impactos: <b>' + p.hits + '</b>  Disparos: <b>' + p.shots + '</b>  Creditos: <b>' + fmt(p.credits) + '</b></div>' +
-        '<div style="margin-top:8px"><b style="color:#7cff23">Equipo Verde</b> - Impactos: <b>' + g.hits + '</b>  Disparos: <b>' + g.shots + '</b>  Creditos: <b>' + fmt(g.credits) + '</b></div>';
+        '<div><b style="color:#ff4df0">Equipo Morado</b> - Impactos: <b>' + p.hits + '</b>  Disparos: <b>' + p.shots + '</b>  Créditos: <b>' + fmt(p.credits) + '</b></div>' +
+        '<div style="margin-top:8px"><b style="color:#7cff23">Equipo Verde</b> - Impactos: <b>' + g.hits + '</b>  Disparos: <b>' + g.shots + '</b>  Créditos: <b>' + fmt(g.credits) + '</b></div>';
     }
     summaryEl.classList.toggle('hidden', visible);
     newSummaryBtn.textContent = visible ? 'Resumen de partida' : 'Ocultar resumen';
@@ -164,6 +166,8 @@ function resetGame() {
   state.panelStep = 'idle';
   state.selectedTech = null;
   state.currentFnText = '';
+  state.squadIdxMorado = 0;
+  state.squadIdxVerde = 0;
   Object.values(state.teams).forEach(team => {
     team.credits = CREDITOS_INICIALES;
     team.hits = 0;
@@ -188,7 +192,6 @@ function resetGame() {
   closeLaunchHelp();
   const winPopupEl = document.getElementById('winPopup');
   if (winPopupEl) winPopupEl.classList.add('hidden');
-  attackPanelCollapsed = true;
   resetChecklistForTurn();
   setChecklist('chkTurn', true);
   createRoundTargets();
@@ -196,4 +199,5 @@ function resetGame() {
   updateUI();
   showTurnToast('Turno: Morado', state.teams.morado.color);
   setStatus('Presiona "Iniciar ataque" para comenzar el turno.');
+  confirmNormalMode();
 }

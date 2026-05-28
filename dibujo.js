@@ -42,7 +42,7 @@ function drawBackground() {
 function drawGrid() {
   if (!gridVisible) return;
   ctx.save();
-  ctx.font = '10px Courier New';
+  ctx.font = '18px Segoe UI';
   ctx.lineWidth = 1;
   ctx.textBaseline = 'middle';
 
@@ -173,7 +173,7 @@ function drawOriginLauncher() {
   ctx.lineTo(o.x - 34, o.y + 9);
   ctx.closePath();
   ctx.fill();
-  ctx.font = 'bold 14px Courier New';
+  ctx.font = 'bold 22px Segoe UI';
   const label = 'BASE';
   const metrics = ctx.measureText(label);
   const labelW = metrics.width + 10;
@@ -187,7 +187,29 @@ function drawOriginLauncher() {
   ctx.restore();
 }
 
-// Efecto de oscurecimiento y texto "CAMARA LENTA" durante el zoom
+// Imagen "sssh" sobre el cohete tras un fallo
+function drawMissEffect(now) {
+  if (!missEffect || !rocket) { missEffect = null; return; }
+  const elapsed = now - missEffect.startedAt;
+  if (elapsed > SSSH_DURATION) { missEffect = null; return; }
+
+  const progress = elapsed / SSSH_DURATION;
+  const fade = progress < 0.6 ? 1.0 : 1.0 - (progress - 0.6) / 0.4;
+
+  const img = images.sssh;
+  if (!img) return;
+
+  const ratio = img.naturalWidth / img.naturalHeight;
+  const drawW = ratio >= 1 ? SSSH_SIZE : SSSH_SIZE * ratio;
+  const drawH = ratio >= 1 ? SSSH_SIZE / ratio : SSSH_SIZE;
+
+  ctx.save();
+  ctx.globalAlpha = SSSH_OPACITY * Math.max(0, fade);
+  ctx.drawImage(img, rocket.px - drawW / 2, rocket.py - drawH - drawH * 0.3, drawW, drawH);
+  ctx.restore();
+}
+
+// Efecto de oscurecimiento y texto "CÁMARA LENTA" durante el zoom
 function drawSlowMoOverlay() {
   if (camera.phase === 'idle' || camera.zoom < 1.05) return;
   const t = Math.min(1, (camera.zoom - 1) / (ZOOM_MAX - 1));
@@ -205,14 +227,15 @@ function drawSlowMoOverlay() {
     const alpha = Math.min(1, t * 2);
     if (alpha > 0.05) {
       ctx.save();
-      ctx.font = 'bold 20px Courier New';
+      ctx.font = 'bold 30px Segoe UI';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = `rgba(0,0,0,${alpha * 0.7})`;
-      ctx.fillStyle = `rgba(255,220,50,${alpha * 0.92})`;
-      ctx.strokeText('⬤ CAMARA LENTA', W / 2, 58);
-      ctx.fillText('⬤ CAMARA LENTA', W / 2, 58);
+      ctx.shadowColor = `rgba(0,0,0,${alpha * 0.95})`;
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 2;
+      ctx.fillStyle = `rgba(220,30,30,${alpha * 0.95})`;
+      ctx.fillText('⬤ CÁMARA LENTA', W / 2, 58);
       ctx.restore();
     }
   }

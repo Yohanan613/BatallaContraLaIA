@@ -13,6 +13,8 @@ const state = {
   selectedTech: null,
   currentFnText: '',
   turnToastHideAt: 0,
+  squadIdxMorado: 0,
+  squadIdxVerde: 0,
   teams: {
     morado: {
       id: 'morado',
@@ -50,10 +52,14 @@ let rocket = null;
 let previewFn = null;
 let previewTech = null;
 let explosions = [];
+let missEffect = null;
+let rocketInHitbox = false;
+let missEffectCooldownUntil = 1;
 let lastTime = 0;
 let attackLocked = false;
 let turnAdvanceTimer = null;
-let attackPanelCollapsed = true;
+let attackPanelCollapsed = false;
+let drawScaleFactor = 1;
 
 // Estado de la camara (zoom / camara lenta)
 let camera = {
@@ -72,8 +78,9 @@ let trajectoryPreview = {
   fn: null,
   techId: null,
   teamId: null,
+  isCustomFormula: false,
   startedAt: 0,
-  duration: 2500,
+  duration: 2450,
   points: [],
   timer: null,
 };
@@ -100,12 +107,22 @@ function clamp(v, min, max) {
 
 // Recalcula dimensiones del canvas y escala del mundo al cambiar ventana
 function resize() {
-  W = canvas.width = window.innerWidth;
+  const isSplit = document.body.classList.contains('split-mode');
+  const panelEl = document.getElementById('attackPanel');
+  const panelW = (isSplit && panelEl) ? panelEl.offsetWidth : 0;
+  const mapW = isSplit ? Math.max(100, window.innerWidth - panelW) : window.innerWidth;
+  W = canvas.width = mapW;
   H = canvas.height = window.innerHeight;
+  canvas.style.width = isSplit ? (mapW + 'px') : '';
   seaY = Math.round(H * 0.56);
   originX = 92;
   const usableW = Math.max(300, W - originX - 54);
   scale = usableW / (worldXMax - worldXMin);
+  if (isSplit && panelEl) {
+    panelEl.dataset.size = panelW < 400 ? 'narrow' : panelW < 640 ? 'medium' : 'wide';
+  } else if (panelEl) {
+    delete panelEl.dataset.size;
+  }
   if (targets.length) recalcTargetPixels();
 }
 window.addEventListener('resize', resize);
