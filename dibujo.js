@@ -54,10 +54,10 @@ function drawGrid() {
     ctx.moveTo(p.x, 48);
     ctx.lineTo(p.x, H - 36);
     ctx.stroke();
-    if (major || x === 0) {
+    if (x % 5 === 0 && x > 0) {
       ctx.fillStyle = 'rgba(224,246,255,.62)';
       ctx.textAlign = 'center';
-      ctx.fillText(String(x), p.x, seaY + 15);
+      ctx.fillText(`${x}s`, p.x, seaY + 15);
     }
   }
 
@@ -70,10 +70,10 @@ function drawGrid() {
     ctx.moveTo(originX, p.y);
     ctx.lineTo(W - 40, p.y);
     ctx.stroke();
-    if (major) {
+    if (y % 2 === 0) {
       ctx.textAlign = 'right';
       ctx.fillStyle = y === 0 ? 'rgba(255,214,110,.95)' : 'rgba(224,246,255,.56)';
-      ctx.fillText(String(y), originX - 9, p.y);
+      ctx.fillText(`${y}m`, originX - 9, p.y);
     }
   }
 
@@ -83,6 +83,35 @@ function drawGrid() {
   ctx.fillStyle = 'rgba(255,214,110,.95)';
   ctx.textAlign = 'left';
   ctx.fillText('(0,0) mar', o.x + 10, o.y - 15);
+
+  // Indicador de rango Y justo a la izquierda de la flecha de base (origen)
+  const launcher  = worldToScreen(0, 0);
+  const rangeX    = launcher.x - 46 - 6;
+  const isSplitR  = document.body.classList.contains('split-mode');
+  const worldTop  = worldToScreen(0, LAUNCH_RANGE_Y_MAX).y + LAUNCH_RANGE_INDICATOR_PX_TOP;
+  const worldBot  = worldToScreen(0, LAUNCH_RANGE_Y_MIN).y + LAUNCH_RANGE_INDICATOR_PX_TOP;
+  const midPx     = (worldTop + worldBot) / 2;
+  // En pantalla normal los indicadores se pegan a los extremos del texto "Rango Y"
+  const textHalf  = LAUNCH_RANGE_LABEL_GAP;
+  const pxTop     = isSplitR ? worldTop : midPx - textHalf;
+  const pxBot     = isSplitR ? worldBot : midPx + textHalf;
+  ctx.font = 'bold 11px Segoe UI';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(56,245,255,0.85)';
+  ctx.fillText(`▼ ${LAUNCH_RANGE_Y_MAX}m`, rangeX, pxTop);
+  ctx.save();
+  ctx.translate(rangeX, midPx);
+  ctx.rotate(-Math.PI / 2);
+  ctx.font = 'bold 17px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(56,245,255,0.50)';
+  ctx.fillText('Rango Y', 0, 0);
+  ctx.restore();
+  ctx.font = 'bold 11px Segoe UI';
+  ctx.textAlign = 'right';
+  ctx.fillStyle = 'rgba(56,245,255,0.85)';
+  ctx.fillText(`▲ ${LAUNCH_RANGE_Y_MIN}m`, rangeX, pxBot);
+
   ctx.restore();
 }
 

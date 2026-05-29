@@ -185,6 +185,32 @@ function showBonusMessage(amount) {
   setTimeout(() => el.remove(), 3000);
 }
 
+function showOutOfRangeMessage() {
+  const el = document.createElement('div');
+  el.className = 'out-of-range-message';
+  el.textContent = 'MISIL fuera de rango';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function showMissMessage(worldDist) {
+  const el = document.createElement('div');
+  el.className = 'miss-message';
+  let distStr;
+  if (worldDist < 1e-6) {
+    distStr = worldDist.toExponential(2);
+  } else if (worldDist < 0.01) {
+    distStr = worldDist.toFixed(5);
+  } else if (worldDist < 1) {
+    distStr = worldDist.toFixed(3);
+  } else {
+    distStr = worldDist.toFixed(2);
+  }
+  el.textContent = `Estuviste a ${distStr} de impactar`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
 // Valida la funcion en tiempo real y habilita/deshabilita el boton de lanzar
 function updateFormulaFromInput(text, renderOnly = false) {
   state.currentFnText = text;

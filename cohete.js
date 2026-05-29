@@ -91,6 +91,7 @@ function actuallyLaunchRocket() {
     techId,
     fn,
     t: 0,
+    lastT: 0,
     px: p.x,
     py: p.y,
     lastPx: p.x,
@@ -155,34 +156,41 @@ function drawTrajectoryPreview(now) {
   ctx.restore();
 }
 
-// Detecta si el cohete golpeo un objetivo y registra el impacto
+// Detecta si el cohete cruzo matematicamente el punto exacto del objetivo
 function checkImpact() {
   if (!rocket) return false;
+  let nearestMissDist = Infinity;
+
   for (const t of targets) {
     if (!t.alive) continue;
-    const hb = getKillHitboxPixels(t);
-    if (rocket.px >= hb.x && rocket.px <= hb.x + hb.w && rocket.py >= hb.y && rocket.py <= hb.y + hb.h) {
+    // Solo cuando el cohete cruza la coordenada X del objetivo en este paso
+    if (rocket.lastT > t.cxWorld || rocket.t < t.cxWorld) continue;
+    const fy = safeEval(rocket.fn, t.cxWorld);
+    if (!Number.isFinite(fy)) continue;
+    const mathDist = Math.abs(fy - t.cyWorld);
+
+    if (mathDist <= HITBOX_EXACT_EPSILON) {
       t.alive = false;
       const team = state.teams[rocket.teamId];
       const tech = TECNOLOGIAS[rocket.techId];
       if (!state.devMode) team.credits += tech.recompensa;
       team.hits += 1;
-      const impactX = hb.x + hb.w / 2;
-      const impactY = hb.y + hb.h / 2;
-      createExplosion(impactX, impactY, 1.2);
+      const impactP = worldToScreen(t.cxWorld, t.cyWorld);
+      createExplosion(impactP.x, impactP.y, 1.2);
       stopSound('missilfly');
       const explosionKey = t.type === 'avion' ? 'explosionAvion'
         : t.type === 'barco' ? 'explosionBarco'
         : 'explosionSubmarino';
       playSound(explosionKey, { volume: 0.90 });
-      camera.pivotX = impactX;
-      camera.pivotY = impactY;
+      camera.pivotX = impactP.x;
+      camera.pivotY = impactP.y;
       camera.targetZoom = ZOOM_MAX;
       camera.phase = 'holding';
       camera.holdUntil = performance.now() + 950;
       camera.slowMoFactor = 1;
       missEffect = null;
       rocketInHitbox = false;
+      _hitboxVisitedIds.clear();
       const wasCustomFormula = rocket.isCustomFormula;
       updateTargetPanel();
       updateUI();
@@ -205,7 +213,18 @@ function checkImpact() {
       }
       return true;
     }
+
+    // Solo cuenta la distancia si el cohete entro en el hitbox visual de este objetivo
+    if (mathDist < nearestMissDist && _hitboxVisitedIds.has(t.id)) {
+      nearestMissDist = mathDist;
+    }
   }
+
+  // Muestra la distancia solo si el cohete paso por el hitbox visual del objetivo
+  if (nearestMissDist < Infinity && typeof showMissMessage === 'function') {
+    showMissMessage(nearestMissDist);
+  }
+
   return false;
 }
 
@@ -221,9 +240,13 @@ function destroyRocketOutOfBounds() {
     camera.targetZoom = 1;
     camera.slowMoFactor = 1;
   }
+  if (_hitboxVisitedIds.size === 0 && typeof showOutOfRangeMessage === 'function') {
+    showOutOfRangeMessage();
+  }
   missEffect = null;
   stopSound('missilfly');
   rocket = null;
+  _hitboxVisitedIds.clear();
   scheduleTurnAdvance();
   attackLocked = true;
   setStatus('Cohete fuera del área de lanzamiento.', 'bad');
@@ -261,9 +284,12 @@ function checkProximityForSlowMo() {
   }
 }
 
+// IDs de objetivos cuyo hitbox visual fue penetrado por el cohete en este vuelo
+const _hitboxVisitedIds = new Set();
+
 // Detecta cuando el cohete sale de la hitbox visual sin haber matado → activa sssh
 function checkRocketHitboxContact() {
-  if (!rocket) { rocketInHitbox = false; return; }
+  if (!rocket) { rocketInHitbox = false; _hitboxVisitedIds.clear(); return; }
 
   let inAny = false;
   for (const t of targets) {
@@ -272,6 +298,7 @@ function checkRocketHitboxContact() {
     if (rocket.px >= hb.x && rocket.px <= hb.x + hb.w &&
         rocket.py >= hb.y && rocket.py <= hb.y + hb.h) {
       inAny = true;
+      _hitboxVisitedIds.add(t.id);
       break;
     }
   }
@@ -290,6 +317,7 @@ function checkRocketHitboxContact() {
 // Avanza la posicion del cohete un paso de simulacion
 function updateRocket(dt) {
   if (!rocket) return;
+  rocket.lastT = rocket.t;
   rocket.t += dt * ROCKET_SPEED;
   const y = safeEval(rocket.fn, rocket.t);
   if (!Number.isFinite(y)) {

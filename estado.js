@@ -114,10 +114,12 @@ function resize() {
   W = canvas.width = mapW;
   H = canvas.height = window.innerHeight;
   canvas.style.width = isSplit ? (mapW + 'px') : '';
-  seaY = Math.round(H * 0.56);
   originX = 92;
   const usableW = Math.max(300, W - originX - 54);
   scale = usableW / (worldXMax - worldXMin);
+  seaY = isSplit
+    ? Math.round(SPLIT_Y_VISIBLE_MAX * scale)
+    : Math.round(H * 0.56);
   if (isSplit && panelEl) {
     panelEl.dataset.size = panelW < 400 ? 'narrow' : panelW < 640 ? 'medium' : 'wide';
   } else if (panelEl) {

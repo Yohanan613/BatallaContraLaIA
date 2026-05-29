@@ -20,8 +20,8 @@ const CREDITOS_INICIALES = 10000;
 // Limites del mundo en coordenadas de juego
 const worldXMin = 0;
 const worldXMax = 50;
-const worldYTop = 100;
-const worldYBottom = -100;
+const worldYTop = 22;
+const worldYBottom = -22;
 
 // Escala visual de los enemigos y sus etiquetas
 const FLEET_SIZE_SCALE = 1.8;
@@ -123,11 +123,30 @@ const TARGET_TYPES = {
   },
 };
 
+// Rango Y valido para el lanzamiento del cohete (unidades de mundo)
+const LAUNCH_RANGE_Y_MAX =  18;   // limite superior (positivo = sobre el mar)
+const LAUNCH_RANGE_Y_MIN = -18;   // limite inferior (negativo = bajo el mar)
+
+// Maximo Y visible en el eje del plano (pantalla dividida y pantalla normal).
+// seaY se recalcula para que y=SPLIT_Y_VISIBLE_MAX quede justo en el tope del canvas.
+const SPLIT_Y_VISIBLE_MAX = 22.45;
+
+// Offset vertical en pixeles respecto al centro del canvas para el indicador de rango
+// 0 = perfectamente centrado, positivo = baja, negativo = sube
+const LAUNCH_RANGE_INDICATOR_PX_TOP = 0;
+
+// Distancia en pixeles entre el texto "Rango Y" y cada indicador en pantalla completa (sin split)
+const LAUNCH_RANGE_LABEL_GAP = 60;
+
 // Radio en pixeles del punto azul central de la hitbox (0 = oculto)
 const HITBOX_DOT_RADIUS = 6;
 
+// Precision matematica para el impacto: |fn(cxWorld) - cyWorld| debe ser <= este valor
+// Number.EPSILON*100 ≈ 2.2e-14: "0*x" impacta, "0.00000000000001*x" no
+const HITBOX_EXACT_EPSILON = Number.EPSILON * 100;
+
 // Factor de escala de la hitbox de destruccion (invisible, mas pequeña que la visual)
-const HITBOX_KILL_SCALE = 0.000001;
+const HITBOX_KILL_SCALE = 0.001;
 
 // Opciones para el modo de pantalla dividida (split-mode)
 const SPLIT_MODE_ENEMY_SCALE  = 0.6;  // escala de los enemigos (1 = tamaño normal)
@@ -140,8 +159,8 @@ const SSSH_OPACITY    = 0.7; // 0.0 a 1.0 — transparencia de la imagen
 const SSSH_DURATION   = 2100; // ms — duración total antes de desvanecerse
 
 // Parametros de camara lenta y zoom al impacto
-const SLOW_MO_TRIGGER_DIST = 70;
+const SLOW_MO_TRIGGER_DIST = 50;
 const SLOW_MO_FACTOR = 0.10;
-const ZOOM_MAX = 2.5;
+const ZOOM_MAX = 4.5;
 const ZOOM_IN_SPEED = 7;
 const ZOOM_OUT_SPEED = 1.5;
