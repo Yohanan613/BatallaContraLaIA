@@ -124,10 +124,10 @@ const TARGET_TYPES = {
 };
 
 // Radio en pixeles del punto azul central de la hitbox (0 = oculto)
-const HITBOX_DOT_RADIUS = 7;
+const HITBOX_DOT_RADIUS = 6;
 
 // Factor de escala de la hitbox de destruccion (invisible, mas pequeña que la visual)
-const HITBOX_KILL_SCALE = 0.3;
+const HITBOX_KILL_SCALE = 0.000001;
 
 // Opciones para el modo de pantalla dividida (split-mode)
 const SPLIT_MODE_ENEMY_SCALE  = 0.6;  // escala de los enemigos (1 = tamaño normal)
