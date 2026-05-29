@@ -105,7 +105,7 @@ const TARGET_TYPES = {
     label: 'Objetivo aéreo',
     zone: 'cielo',
     drawW: 110,
-    hitbox: { x: 0.3, y: 0.45, w: 0.54, h: 0.40 },
+    hitbox: { x: 0.3, y: 0.35, w: 0.54, h: 0.40 },
   },
   barco: {
     img: 'barco',
@@ -127,7 +127,7 @@ const TARGET_TYPES = {
 const HITBOX_DOT_RADIUS = 7;
 
 // Factor de escala de la hitbox de destruccion (invisible, mas pequeña que la visual)
-const HITBOX_KILL_SCALE = 0.35;
+const HITBOX_KILL_SCALE = 0.3;
 
 // Opciones para el modo de pantalla dividida (split-mode)
 const SPLIT_MODE_ENEMY_SCALE  = 0.6;  // escala de los enemigos (1 = tamaño normal)

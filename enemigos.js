@@ -129,34 +129,29 @@ function updateTargetPanel() {
   }).join('');
 }
 
-// Devuelve el rectangulo de hitbox en pixeles para un target
-function getHitboxPixels(target, x = target.px, y = target.py + (target.bobOffset || 0)) {
+// Devuelve el rectangulo de hitbox visual centrado en la posicion actual de la imagen (con bob)
+function getHitboxPixels(target, bobbingY = target.py + (target.bobOffset || 0)) {
   const hb = TARGET_TYPES[target.type].hitbox;
-  return {
-    x: x + target.w * hb.x,
-    y: y + target.h * hb.y,
-    w: target.w * hb.w,
-    h: target.h * hb.h,
-  };
+  const cx = target.px + target.w / 2;
+  const cy = bobbingY + target.h / 2;
+  const hw = target.w * hb.w;
+  const hh = target.h * hb.h;
+  return { x: cx - hw / 2, y: cy - hh / 2, w: hw, h: hh };
 }
 
-// Devuelve la hitbox de destruccion: misma posicion pero escalada por HITBOX_KILL_SCALE
-function getKillHitboxPixels(target, x = target.px, y = target.py + (target.bobOffset || 0)) {
-  const full = getHitboxPixels(target, x, y);
-  const s = HITBOX_KILL_SCALE;
-  const shrinkW = full.w * (1 - s) / 2;
-  const shrinkH = full.h * (1 - s) / 2;
-  return {
-    x: full.x + shrinkW,
-    y: full.y + shrinkH,
-    w: full.w * s,
-    h: full.h * s,
-  };
+// Devuelve la hitbox de destruccion: mismo centro que el HITBOX_DOT, escalada por HITBOX_KILL_SCALE
+function getKillHitboxPixels(target) {
+  const hb = TARGET_TYPES[target.type].hitbox;
+  const cx = target.px + target.w / 2;
+  const cy = target.py + target.h / 2;
+  const hw = target.w * hb.w * HITBOX_KILL_SCALE;
+  const hh = target.h * hb.h * HITBOX_KILL_SCALE;
+  return { x: cx - hw / 2, y: cy - hh / 2, w: hw, h: hh };
 }
 
 //PUNTO CENTRAL AZUL EN LOS OBJETIVOS
 function drawTargetGuides(t, x, y) {
-  const hb = getHitboxPixels(t, x, y);
+  const hb = getHitboxPixels(t, y);
   ctx.save();
   ctx.fillStyle = t.alive ? 'rgba(255,86,114,.12)' : 'rgba(255,255,255,.05)';
   ctx.fillRect(hb.x, hb.y, hb.w, hb.h);
@@ -166,8 +161,9 @@ function drawTargetGuides(t, x, y) {
   ctx.strokeRect(hb.x, hb.y, hb.w, hb.h);
 
   if (t.alive && HITBOX_DOT_RADIUS > 0) {
-    const dotX = hb.x + hb.w / 2;
-    const dotY = hb.y + hb.h / 2;
+    // Punto fijo en las coordenadas exactas del label (sin bob)
+    const dotX = t.px + t.w / 2;
+    const dotY = t.py + t.h / 2;
     ctx.setLineDash([]);
     ctx.beginPath();
     ctx.arc(dotX, dotY, HITBOX_DOT_RADIUS, 0, Math.PI * 2);

@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Usuario\\\\Downloads\\\\ai_combat_final_v2\\\\REPO\\\\BatallaContraLaIA\" -Recurse -File)",
+      "Bash(Select-Object -ExpandProperty Name)",
+      "Bash(Sort-Object)",
+      "Bash(Get-Unique)"
     ]
   }
 }

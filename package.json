@@ -22,6 +22,8 @@
   "homepage": "https://github.com/Yohanan613/BatallaContraLaIA#readme",
   "devDependencies": {
     "sass": "^1.100.0"
+  },
+  "dependencies": {
+    "katex": "^0.17.0"
   }
-  
 }
